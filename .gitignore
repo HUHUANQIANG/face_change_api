@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+venv/
+data/
+*.log
+.vscode/
+outputs/
+processed_images/
+processed_videos/
+uploaded_images/
+uploaded_videos/
+workflows/
