@@ -176,6 +176,9 @@ class ComfyUITool:
         wf_copy = copy.deepcopy(workflow)
         target_node_id = "10"
         node = wf_copy.get(target_node_id)
+        replaced = False
+
+        # 优先尝试替换 ID 为 10 的节点
         if node and node.get('class_type') == 'LoadImage':
             inputs = node.setdefault('inputs', {})
             for k, v in list(inputs.items()):
@@ -194,7 +197,24 @@ class ComfyUITool:
                         inputs[k] = new_list
             if 'image' not in inputs:
                 inputs['image'] = image_filename
+            replaced = True
+
+        # 如果没有找到 ID 10 或者它不是 LoadImage，则查找第一个 LoadImage 节点进行替换
+        if not replaced:
+            for nid, node in wf_copy.items():
+                if node.get('class_type') == 'LoadImage':
+                    inputs = node.setdefault('inputs', {})
+                    if 'image' not in inputs:
+                        inputs['image'] = image_filename
+                    else:
+                        inputs['image'] = image_filename
+                    print(f"ℹ️ Auto-detected and replaced LoadImage node at ID {nid}")
+                    replaced = True
+                    break
         
+        if not replaced:
+            print("⚠️ No LoadImage node found to replace!")
+
         resp = self._queue_prompt(wf_copy)
         prompt_id = resp.get('prompt_id') or resp.get('id') or resp.get('request_id')
         if not prompt_id:
@@ -437,14 +457,14 @@ async def process_image(request: Request, image: UploadFile = File(...), templat
 
 
 @app.post('/process_video')
-async def process_video(request: Request, video: UploadFile = File(...), template: str = Form(...), mode: str = Form('video')):
+async def process_video(request: Request, image: UploadFile = File(...), template: str = Form(...), mode: str = Form('video')):
     global current_template
-    if video is None:
-        raise HTTPException(status_code=400, detail='No video uploaded')
+    if image is None:
+        raise HTTPException(status_code=400, detail='No image uploaded')
 
-    # 检查视频文件类型
-    if not video.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
-        raise HTTPException(status_code=400, detail='Unsupported video format')
+    # 检查图片文件类型
+    if not image.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+        raise HTTPException(status_code=400, detail='Unsupported image format')
 
     # 只有当模板不同时才重新加载模板，但不在这里预加载
     if template != current_template:
@@ -470,11 +490,11 @@ async def process_video(request: Request, video: UploadFile = File(...), templat
         current_template = template
         print(f"📋 Template {template} loaded for processing (no preload)")
 
-    # save uploaded video locally and copy to comfy input
-    unique_filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.mp4"
-    local_path = os.path.join(VIDEO_UPLOAD_DIR, unique_filename)
+    # save uploaded image locally and copy to comfy input
+    unique_filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.png"
+    local_path = os.path.join(UPLOAD_DIR, unique_filename)
     with open(local_path, 'wb') as f:
-        shutil.copyfileobj(video.file, f)
+        shutil.copyfileobj(image.file, f)
 
     input_path = os.path.join(COMFYUI_INPUT_DIR, unique_filename)
     try:
@@ -485,9 +505,10 @@ async def process_video(request: Request, video: UploadFile = File(...), templat
     if not comfy.workflow:
         raise HTTPException(status_code=500, detail='Workflow not loaded')
 
-    # run full workflow with this video (replacing LoadVideo inputs)
+    # run full workflow with this image (replacing LoadImage inputs)
     try:
-        run_result = comfy.run_workflow_with_video(comfy.workflow, unique_filename, timeout=1200)
+        # 注意：这里调用 run_workflow_with_image 来替换图片节点，但目的是生成视频
+        run_result = comfy.run_workflow_with_image(comfy.workflow, unique_filename, timeout=1200)
         # extract first video output if any
         history_map = run_result.get('history')
         prompt_id = run_result.get('prompt_id')
@@ -509,7 +530,7 @@ async def process_video(request: Request, video: UploadFile = File(...), templat
             # no video produced or couldn't fetch; still return success
             return JSONResponse(content={
                 'status': 'success',
-                'original_video': local_path,
+                'original_image': local_path,
                 'processed_video_base64': None,
                 'processed_video_path': None,
                 'message': 'Workflow executed, no video output available (or not fetched)'
@@ -529,7 +550,7 @@ async def process_video(request: Request, video: UploadFile = File(...), templat
 
         return JSONResponse(content={
             'status': 'success',
-            'original_video': local_path,
+            'original_image': local_path,
             'processed_video_base64': video_base64,
             'processed_video_path': processed_path,
             'processed_video_url': processed_video_url,

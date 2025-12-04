@@ -24,7 +24,7 @@ UPLOAD_DIR = "uploaded_images"
 PROCESSED_DIR = "processed_images"
 VIDEO_UPLOAD_DIR = "uploaded_videos"
 VIDEO_PROCESSED_DIR = "processed_videos"
-COMFYUI_SERVER = "127.0.0.1:8166"
+COMFYUI_SERVER = "127.0.0.1:8155"
 COMFYUI_INPUT_DIR = "/home/huhq/comfy/ComfyUI/input/"  # ComfyUI 可读的 input 目录
 IMAGE_TEMPLATE_DIR = "./workflows/image"  # 图片处理模板目录
 VIDEO_TEMPLATE_DIR = "./workflows/video"  # 视频处理模板目录
@@ -243,18 +243,17 @@ class ComfyUITool:
         return {'prompt_id': prompt_id, 'history': history}
 
     def free_memory(self):
-        # try:
-        #     response = requests.post(f"http://{self.server_address}/free", json={}, timeout=5)
-        #     if response.status_code == 200:
-        #         return True, "显存已释放"
-        # except Exception:
-        #     pass
-        # try:
-        #     self._queue_prompt({})
-        #     return True, "已通过空任务触发清理"
-        # except Exception as e:
-        #     return False, f"显存释放失败: {e}"
-        return None, "已通过空任务触发清理"
+        try:
+            response = requests.post(f"http://{self.server_address}/free", json={}, timeout=5)
+            if response.status_code == 200:
+                return True, "显存已释放"
+        except Exception:
+            pass
+        try:
+            self._queue_prompt({})
+            return True, "已通过空任务触发清理"
+        except Exception as e:
+            return False, f"显存释放失败: {e}"
 
 
 # ----------------------------
@@ -544,4 +543,4 @@ async def process_video(request: Request, video: UploadFile = File(...), templat
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=5500)
+    uvicorn.run(app, host='0.0.0.0', port=5000)

@@ -140,8 +140,8 @@
 
         <!-- 视频处理区域 -->
         <div id="video-section" class="control-group hidden">
-            <label for="video">上传视频：</label>
-            <input type="file" id="video" accept="video/*">
+            <label for="video-image">上传图片（用于视频换脸）：</label>
+            <input type="file" id="video-image" accept="image/*">
             <button id="submit-video">提交处理</button>
         </div>
 
@@ -188,7 +188,7 @@
             document.getElementById('video-section').classList.toggle('hidden', mode !== 'video');
             
             // 更新标题
-            document.getElementById('original-title').textContent = mode === 'image' ? '原始图片' : '原始视频';
+            document.getElementById('original-title').textContent = mode === 'image' ? '原始图片' : '参考图片';
             document.getElementById('processed-title').textContent = mode === 'image' ? '处理结果' : '处理结果';
             
             // 重置显示区域
@@ -276,16 +276,16 @@
             }
         });
 
-        // 视频预览
-        document.getElementById('video').addEventListener('change', (e) => {
+        // 视频模式下的图片预览
+        document.getElementById('video-image').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (ev) => {
-                    const video = document.getElementById('original-video');
-                    video.src = ev.target.result;
-                    video.classList.remove('hidden');
-                    document.getElementById('original-image').classList.add('hidden');
+                    const img = document.getElementById('original-image');
+                    img.src = ev.target.result;
+                    img.classList.remove('hidden');
+                    document.getElementById('original-video').classList.add('hidden');
                 };
                 reader.readAsDataURL(file);
             }
@@ -337,10 +337,10 @@
 
         // 处理视频
         async function processVideo() {
-            const fileInput = document.getElementById('video');
+            const fileInput = document.getElementById('video-image');
             const template = document.getElementById('template').value;
             if (!fileInput.files[0]) {
-                alert('请上传视频');
+                alert('请上传图片');
                 return;
             }
 
@@ -351,7 +351,7 @@
 
             try {
                 const formData = new FormData();
-                formData.append('video', fileInput.files[0]);
+                formData.append('image', fileInput.files[0]);
                 formData.append('template', template);
                 formData.append('mode', 'video');
 
