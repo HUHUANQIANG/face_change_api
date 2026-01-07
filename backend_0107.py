@@ -91,7 +91,7 @@ class ComfyUITool:
                     mtype = msg.get('type')
                     if mtype == 'progress':
                         data = msg.get('data', {})
-                        print(f"📈 progress: {data.get('value')}/{data.get('max')}")
+                        # print(f"📈 progress: {data.get('value')}/{data.get('max')}")
                     elif mtype == 'executing':
                         data = msg.get('data', {})
                         # ComfyUI sends executing with node=None when finished
