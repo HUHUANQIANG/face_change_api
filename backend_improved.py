@@ -711,6 +711,7 @@ async def process_video(request: Request, image: UploadFile = File(...), templat
     # 检查图片文件类型
     if not image.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
         raise HTTPException(status_code=400, detail='Unsupported image format')
+        ##
 
     # 检查模板是否需要重新加载
     if template != tool_pool.current_template:
