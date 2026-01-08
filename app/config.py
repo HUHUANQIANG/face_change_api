@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     processed_dir: str = Field(default="processed_images", description="Directory for processed images")
     video_upload_dir: str = Field(default="uploaded_videos", description="Directory for uploaded videos")
     video_processed_dir: str = Field(default="processed_videos", description="Directory for processed videos")
-    comfyui_input_dir: str = Field(default="./comfyui_input", description="ComfyUI input directory")
+    comfyui_input_dir: str = Field(default="/home/huhq/comfy/ComfyUI/input/", description="ComfyUI input directory")
     image_template_dir: str = Field(default="./workflows/image", description="Image workflow templates directory")
     video_template_dir: str = Field(default="./workflows/video", description="Video workflow templates directory")
     
